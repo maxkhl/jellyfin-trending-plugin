@@ -105,12 +105,16 @@
     var s = document.createElement('style');
     s.id = STYLE_ID;
     s.textContent = [
-      '#' + ROW_ID + ' .trendingTitleLink{color:inherit;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:2px;}',
+      '#' + ROW_ID + ' .sectionTitleContainer{display:flex;align-items:center;}',
+      '#' + ROW_ID + ' .trendingTitleLink{color:inherit;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;}',
       '#' + ROW_ID + ' .trendingTitleLink:hover{color:#00a4dc;}',
       '#' + ROW_ID + ' .trendingTitleLink .chev{font-size:1.25em;line-height:1;opacity:.7;}',
-      '#' + ROW_ID + ' .trendingScroller{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:6px 3.3% 14px;scroll-behavior:smooth;}',
-      '#' + ROW_ID + ' .trendingScroller::-webkit-scrollbar{height:6px;}',
-      '#' + ROW_ID + ' .trendingScroller::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:3px;}',
+      '#' + ROW_ID + ' .trendingScrollBtns{margin-left:auto;display:flex;gap:8px;padding-right:3.3%;}',
+      '#' + ROW_ID + ' .trendingScrollBtn{background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.2rem;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .15s,opacity .15s;}',
+      '#' + ROW_ID + ' .trendingScrollBtn:hover{background:#00a4dc;}',
+      '#' + ROW_ID + ' .trendingScrollBtn.disabled{opacity:.3;pointer-events:none;}',
+      '#' + ROW_ID + ' .trendingScroller{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:6px 3.3% 14px;scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;}',
+      '#' + ROW_ID + ' .trendingScroller::-webkit-scrollbar{display:none;}',
       '#' + ROW_ID + ' .trendingCard{flex:0 0 auto;width:140px;text-decoration:none;color:inherit;}',
       '#' + ROW_ID + ' .trendingPoster{position:relative;width:100%;aspect-ratio:2/3;border-radius:8px;background-size:cover;background-position:center;background-color:#222;transition:transform .15s;}',
       '#' + ROW_ID + ' .trendingCard:hover .trendingPoster{transform:scale(1.04);}',
@@ -135,9 +139,23 @@
     titleLink.href = PAGE;
     titleLink.title = 'Open the Trending page';
     titleLink.addEventListener('click', go);
-    titleLink.innerHTML = '<span>🔥 Trending this week</span><span class="chev" aria-hidden="true">›</span>';
+    titleLink.innerHTML = '<span>🔥 Trending this week</span><span class="chev" aria-hidden="true"> ›</span>';
     h2.appendChild(titleLink);
     titleC.appendChild(h2);
+
+    var btns = document.createElement('div');
+    btns.className = 'trendingScrollBtns';
+    var prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'trendingScrollBtn';
+    prev.innerHTML = '‹';
+    var next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'trendingScrollBtn';
+    next.innerHTML = '›';
+    btns.appendChild(prev);
+    btns.appendChild(next);
+    titleC.appendChild(btns);
     section.appendChild(titleC);
 
     var scroller = document.createElement('div');
@@ -161,6 +179,23 @@
     });
 
     section.appendChild(scroller);
+
+    function page(dir) {
+      scroller.scrollBy({ left: dir * Math.max(scroller.clientWidth * 0.8, 200), behavior: 'smooth' });
+    }
+    prev.addEventListener('click', function () { page(-1); });
+    next.addEventListener('click', function () { page(1); });
+
+    function updateBtns() {
+      var atStart = scroller.scrollLeft <= 4;
+      var atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 4;
+      prev.classList.toggle('disabled', atStart);
+      next.classList.toggle('disabled', atEnd);
+    }
+    scroller.addEventListener('scroll', updateBtns);
+    window.addEventListener('resize', updateBtns);
+    setTimeout(updateBtns, 150);
+
     return section;
   }
 
