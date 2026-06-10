@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.0.9",
+        "changelog": "Automated build of commit d13a9590e9e89ba0445c9a12a2821cd213993f17.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/maxkhl/jellyfin-trending-plugin/releases/download/v1.0.0.9/jellyfin-trending_1.0.0.9.zip",
+        "checksum": "e7ef4a0738938e6e08a30f6b7d3d10d2",
+        "timestamp": "2026-06-10T15:24:15Z"
+      },
+      {
         "version": "1.0.0.6",
         "changelog": "Automated build of commit 2ce7e4d7aede402e0b7ec032ededb459e8bf4bb4.",
         "targetAbi": "10.11.0.0",
