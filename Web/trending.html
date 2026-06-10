@@ -307,7 +307,7 @@
     const name     = item.itemName     ?? item.ItemName     ?? 'Unknown';
     const type     = item.itemType     ?? item.ItemType     ?? '';
     const id       = item.itemId       ?? item.ItemId       ?? '';
-    const plays    = item.uniqueViewers ?? item.UniqueViewers ?? 0    ?? item.PlayCount    ?? 0;
+    const plays    = item.uniqueViewers ?? item.UniqueViewers ?? 0;
     const pct = maxPlays > 0 ? Math.round((plays / maxPlays) * 100) : 0;
     const typeClass = type === 'Movie' ? 'movie' : 'series';
     const typeLabel = type === 'Movie' ? 'Movie' : 'TV';
@@ -382,7 +382,7 @@
       const items = await fetchTrending();
       if (!items.length) { showEmpty(); return; }
 
-      maxPlays = items[0].playCount;
+      maxPlays = items[0].uniqueViewers ?? items[0].UniqueViewers ?? 1;
 
       const grid = document.createElement('div');
       grid.className = 'grid';

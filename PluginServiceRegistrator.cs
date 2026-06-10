@@ -4,6 +4,7 @@ using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace JellyfinTrending;
 
@@ -13,5 +14,6 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     {
         serviceCollection.AddSingleton<TrendingRepository>();
         serviceCollection.AddSingleton<IScheduledTask, RefreshTrendingTask>();
+        serviceCollection.AddHostedService<WebInjectionService>();
     }
 }

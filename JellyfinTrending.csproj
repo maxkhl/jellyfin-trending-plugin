@@ -22,5 +22,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Web\trending.html" />
+    <EmbeddedResource Include="Web\trendingNav.js" />
   </ItemGroup>
 </Project>

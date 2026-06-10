@@ -59,4 +59,24 @@ public class TrendingController : ControllerBase
         using var reader = new StreamReader(stream);
         return Content(reader.ReadToEnd(), "text/html");
     }
+
+    /// <summary>
+    /// Serves the client script that injects the Trending link into the Jellyfin web UI.
+    /// </summary>
+    [HttpGet("ClientScript")]
+    [AllowAnonymous]
+    [Produces("application/javascript")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetClientScript()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        const string resourceName = "JellyfinTrending.Web.trendingNav.js";
+
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null) return NotFound("Client script resource not found.");
+
+        using var reader = new StreamReader(stream);
+        return Content(reader.ReadToEnd(), "application/javascript");
+    }
 }
