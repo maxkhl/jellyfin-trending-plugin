@@ -29,10 +29,19 @@
   // Try to add the link into the left drawer. Returns true once present.
   function tryDrawer() {
     if (document.getElementById(LINK_ID)) return true;
-    var list = document.querySelector('.mainDrawer .navMenuOptions') ||
-               document.querySelector('.mainDrawer-scrollContainer');
+    var list = document.querySelector('.mainDrawer-scrollContainer') ||
+               document.querySelector('.mainDrawer .navMenuOptions');
     if (!list) return false;
-    list.appendChild(makeDrawerLink());
+
+    var link = makeDrawerLink();
+    // Place it right after the Home link / custom menu options, near the top.
+    var anchor = list.querySelector('.customMenuOptions') ||
+                 list.querySelector('a.navMenuOption');
+    if (anchor && anchor.parentNode === list) {
+      anchor.insertAdjacentElement('afterend', link);
+    } else {
+      list.appendChild(link);
+    }
     return true;
   }
 
