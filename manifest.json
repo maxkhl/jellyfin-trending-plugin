@@ -1,1 +1,21 @@
-[]
+[
+  {
+    "guid": "3a7b9c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+    "name": "Trending",
+    "description": "Shows trending content across all users based on real playback data.",
+    "overview": "Tracks plays server-side and exposes a user-facing trending page at /Trending/Page.",
+    "owner": "maxkhl",
+    "category": "General",
+    "imageUrl": "",
+    "versions": [
+      {
+        "version": "1.0.0.1",
+        "changelog": "Automated build of commit eaab4f8725e12fd4e00e451e20642c2cfd0d8cec.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/maxkhl/jellyfin-trending-plugin/releases/download/v1.0.0.1/jellyfin-trending_1.0.0.1.zip",
+        "checksum": "219d240ab3ae42614a8e198026c6e286",
+        "timestamp": "2026-06-10T14:01:19Z"
+      }
+    ]
+  }
+]
