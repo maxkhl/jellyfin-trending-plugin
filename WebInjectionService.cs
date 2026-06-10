@@ -113,7 +113,9 @@ public class WebInjectionService : IHostedService
             var json = JsonSerializer.Serialize(new
             {
                 id = PluginGuid,
-                fileNamePattern = "^index\\.html$",
+                // Unanchored: File Transformation matches this against the full request
+                // path (which has a directory prefix), like Jellyfin Enhanced's "index.html".
+                fileNamePattern = "index\\.html",
                 callbackAssembly = typeof(WebInjectionService).Assembly.FullName,
                 callbackClass = typeof(WebInjectionService).FullName,
                 callbackMethod = nameof(TransformIndexHtml),
