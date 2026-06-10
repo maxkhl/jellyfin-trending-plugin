@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+publish/
+*.user
+
+# Plugin packaging artifacts
+*.zip
+
+# IDE
+.vs/
+.idea/
+.vscode/
+
+# Claude Code local settings
+.claude/

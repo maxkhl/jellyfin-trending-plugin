@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trending – Jellyfin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #101010;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --accent: #00a4dc;
+      --accent-dim: #007ba8;
+      --text: #e8e8e8;
+      --text-muted: #888;
+      --radius: 8px;
+      --card-w: 160px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    header {
+      background: linear-gradient(180deg, #000 0%, transparent 100%);
+      padding: 24px 32px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    header h1 span {
+      color: var(--accent);
+    }
+
+    .controls {
+      padding: 16px 32px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .pill-group {
+      display: flex;
+      background: var(--surface);
+      border-radius: 24px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .pill {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .pill:hover { color: var(--text); }
+
+    .pill.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-right: 4px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
+      gap: 20px;
+      padding: 8px 32px 0;
+    }
+
+    .card {
+      cursor: pointer;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: scale(1.04);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      z-index: 2;
+    }
+
+    .rank-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.75);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+      backdrop-filter: blur(4px);
+    }
+
+    .poster-wrap {
+      aspect-ratio: 2/3;
+      background: var(--surface2);
+      overflow: hidden;
+    }
+
+    .poster-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.3s;
+    }
+
+    .poster-wrap img.loading { opacity: 0; }
+    .poster-wrap img.loaded  { opacity: 1; }
+
+    .poster-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      color: var(--text-muted);
+    }
+
+    .card-info {
+      padding: 10px 10px 12px;
+    }
+
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .card-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .plays-bar {
+      height: 3px;
+      background: var(--surface2);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .plays-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .type-badge {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .type-badge.movie  { background: #2d1f6e; color: #a78bfa; }
+    .type-badge.series { background: #1a3a2a; color: #6ee7b7; }
+
+    .loading-state, .empty-state, .error-state {
+      text-align: center;
+      padding: 80px 32px;
+      color: var(--text-muted);
+    }
+
+    .loading-state .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--surface2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+    .refresh-btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-top: 16px;
+    }
+
+    .refresh-btn:hover { background: var(--accent-dim); }
+
+    @media (max-width: 500px) {
+      header, .controls, .grid { padding-left: 16px; padding-right: 16px; }
+      :root { --card-w: 130px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🔥 <span>Trending</span> on Jellyfin</h1>
+</header>
+
+<div class="controls">
+  <span class="section-label">Type</span>
+  <div class="pill-group" id="typeGroup">
+    <button class="pill active" data-type="">All</button>
+    <button class="pill" data-type="Movie">Movies</button>
+    <button class="pill" data-type="Series">TV Shows</button>
+  </div>
+
+  <span class="section-label" style="margin-left:8px">Range</span>
+  <div class="pill-group" id="rangeGroup">
+    <button class="pill active" data-days="7">This Week</button>
+    <button class="pill" data-days="30">This Month</button>
+    <button class="pill" data-days="365">All Time</button>
+  </div>
+</div>
+
+<div id="content"></div>
+
+<script>
+(function () {
+  let currentType = '';
+  let currentDays = 7;
+  let maxPlays = 1;
+
+  // Read Jellyfin auth token from localStorage
+  function getToken() {
+    try {
+      const raw = localStorage.getItem('jellyfin_credentials');
+      if (!raw) return null;
+      const creds = JSON.parse(raw);
+      return creds?.Servers?.[0]?.AccessToken ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  function authHeaders() {
+    const token = getToken();
+    return token ? { 'X-MediaBrowser-Token': token } : {};
+  }
+
+  async function fetchTrending() {
+    const params = new URLSearchParams({ days: currentDays, limit: 24 });
+    if (currentType) params.set('type', currentType);
+
+    const res = await fetch(`/Trending/Items?${params}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  function posterUrl(itemId) {
+    const token = getToken();
+    const base = `/Items/${itemId}/Images/Primary?maxWidth=320&quality=90`;
+    return token ? `${base}&api_key=${token}` : base;
+  }
+
+  function renderCard(item, rank) {
+    // Normalize both camelCase and PascalCase (Jellyfin may return either)
+    const name     = item.itemName     ?? item.ItemName     ?? 'Unknown';
+    const type     = item.itemType     ?? item.ItemType     ?? '';
+    const id       = item.itemId       ?? item.ItemId       ?? '';
+    const plays    = item.uniqueViewers ?? item.UniqueViewers ?? 0    ?? item.PlayCount    ?? 0;
+    const pct = maxPlays > 0 ? Math.round((plays / maxPlays) * 100) : 0;
+    const typeClass = type === 'Movie' ? 'movie' : 'series';
+    const typeLabel = type === 'Movie' ? 'Movie' : 'TV';
+    const playsLabel = plays === 1 ? '1 viewer' : `${plays} viewers`;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <span class="rank-badge">#${rank}</span>
+      <div class="poster-wrap">
+        <img class="loading" alt="${escHtml(name)}" />
+        <div class="poster-placeholder" style="display:none">🎬</div>
+      </div>
+      <div class="card-info">
+        <div class="card-title" title="${escHtml(name)}">${escHtml(name)}</div>
+        <div class="card-meta">
+          <span class="type-badge ${typeClass}">${typeLabel}</span>
+          <span>${playsLabel}</span>
+        </div>
+        <div class="plays-bar"><div class="plays-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+
+    const img = card.querySelector('img');
+    const placeholder = card.querySelector('.poster-placeholder');
+
+    img.src = posterUrl(id);
+    img.onload  = () => { img.classList.remove('loading'); img.classList.add('loaded'); };
+    img.onerror = () => { img.style.display = 'none'; placeholder.style.display = 'flex'; };
+
+    // Click → open in Jellyfin
+    card.addEventListener('click', () => {
+      window.location.href = `/web/index.html#!/details?id=${id}`;
+    });
+
+    return card;
+  }
+
+  function escHtml(str) {
+    if (str == null) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showLoading() {
+    document.getElementById('content').innerHTML = `
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <div>Loading trending content…</div>
+      </div>`;
+  }
+
+  function showEmpty() {
+    document.getElementById('content').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        <div>Nothing trending yet in this range.</div>
+        <div style="font-size:0.8rem;margin-top:8px;color:#666">Plays will appear here as users watch content.</div>
+      </div>`;
+  }
+
+  function showError(msg) {
+    document.getElementById('content').innerHTML = `
+      <div class="error-state">
+        <div class="icon">⚠️</div>
+        <div>${escHtml(msg)}</div>
+        <button class="refresh-btn" onclick="location.reload()">Try again</button>
+      </div>`;
+  }
+
+  async function load() {
+    showLoading();
+    try {
+      const items = await fetchTrending();
+      if (!items.length) { showEmpty(); return; }
+
+      maxPlays = items[0].playCount;
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      items.forEach((item, i) => grid.appendChild(renderCard(item, i + 1)));
+
+      document.getElementById('content').innerHTML = '';
+      document.getElementById('content').appendChild(grid);
+    } catch (err) {
+      showError(err.message || 'Failed to load trending data.');
+    }
+  }
+
+  // Pill group logic
+  function initGroup(groupId, key) {
+    document.getElementById(groupId).addEventListener('click', e => {
+      const btn = e.target.closest('.pill');
+      if (!btn) return;
+      document.querySelectorAll(`#${groupId} .pill`).forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      if (key === 'type') currentType = btn.dataset.type;
+      if (key === 'days')  currentDays = parseInt(btn.dataset.days, 10);
+      load();
+    });
+  }
+
+  initGroup('typeGroup', 'type');
+  initGroup('rangeGroup', 'days');
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+name: Build & Publish Plugin
+
+on:
+  push:
+    branches: [main]
+    # Don't re-trigger when the workflow commits the manifest/docs back.
+    paths-ignore:
+      - 'manifest.json'
+      - 'README.md'
+      - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PLUGIN_NAME: Trending
+  ARTIFACT_NAME: jellyfin-trending
+  DOTNET_VERSION: '9.0.x'
+  TARGET_ABI: '10.11.0.0'
+  PLUGIN_GUID: '3a7b9c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Compute version
+        id: version
+        run: |
+          # Stable major.minor.patch, build number bumps every push.
+          VERSION="1.0.0.${{ github.run_number }}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "Building version $VERSION"
+
+      - name: Restore
+        run: dotnet restore JellyfinTrending.csproj
+
+      - name: Build
+        run: |
+          dotnet publish JellyfinTrending.csproj \
+            -c Release \
+            -o publish \
+            --no-self-contained \
+            -p:Version=${{ steps.version.outputs.version }} \
+            -p:AssemblyVersion=${{ steps.version.outputs.version }} \
+            -p:FileVersion=${{ steps.version.outputs.version }}
+
+      - name: Package
+        id: package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP="${{ env.ARTIFACT_NAME }}_${VERSION}.zip"
+          mkdir -p artifact
+
+          # Plugin DLL.
+          cp publish/JellyfinTrending.dll artifact/
+
+          # Generate a meta.json that matches this build (Jellyfin reads it
+          # from the plugin folder after install).
+          cat > artifact/meta.json <<EOF
+          {
+            "guid": "${{ env.PLUGIN_GUID }}",
+            "name": "${{ env.PLUGIN_NAME }}",
+            "description": "Shows trending content across all users based on real playback data.",
+            "overview": "Tracks plays server-side and exposes a user-facing trending page at /Trending/Page.",
+            "owner": "${{ github.repository_owner }}",
+            "category": "General",
+            "version": "${VERSION}",
+            "targetAbi": "${{ env.TARGET_ABI }}",
+            "framework": "net9.0",
+            "timestamp": "${{ steps.version.outputs.timestamp }}"
+          }
+          EOF
+
+          (cd artifact && zip -r "../$ZIP" .)
+
+          CHECKSUM=$(md5sum "$ZIP" | cut -d' ' -f1)
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "checksum=$CHECKSUM" >> "$GITHUB_OUTPUT"
+          echo "MD5: $CHECKSUM"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          files: ${{ steps.package.outputs.zip }}
+          generate_release_notes: true
+
+      - name: Update repository manifest
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SOURCE_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/${{ steps.package.outputs.zip }}"
+          CHECKSUM="${{ steps.package.outputs.checksum }}"
+          TIMESTAMP="${{ steps.version.outputs.timestamp }}"
+
+          # Seed an empty manifest if missing.
+          if [ ! -f manifest.json ]; then echo '[]' > manifest.json; fi
+
+          # Build the new version entry.
+          NEW_VERSION=$(jq -n \
+            --arg version "$VERSION" \
+            --arg changelog "Automated build of commit ${{ github.sha }}." \
+            --arg abi "${{ env.TARGET_ABI }}" \
+            --arg src "$SOURCE_URL" \
+            --arg sum "$CHECKSUM" \
+            --arg ts "$TIMESTAMP" \
+            '{version:$version, changelog:$changelog, targetAbi:$abi, sourceUrl:$src, checksum:$sum, timestamp:$ts}')
+
+          # Ensure the plugin object exists, then prepend the new version.
+          jq \
+            --arg guid "${{ env.PLUGIN_GUID }}" \
+            --arg name "${{ env.PLUGIN_NAME }}" \
+            --arg owner "${{ github.repository_owner }}" \
+            --argjson newVersion "$NEW_VERSION" \
+            'if (map(.guid) | index($guid)) == null then
+               . + [{
+                 guid: $guid,
+                 name: $name,
+                 description: "Shows trending content across all users based on real playback data.",
+                 overview: "Tracks plays server-side and exposes a user-facing trending page at /Trending/Page.",
+                 owner: $owner,
+                 category: "General",
+                 imageUrl: "",
+                 versions: []
+               }]
+             else . end
+             | map(if .guid == $guid then .versions = ([$newVersion] + .versions) else . end)' \
+            manifest.json > manifest.tmp.json
+          mv manifest.tmp.json manifest.json
+          cat manifest.json
+
+      - name: Commit manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          if git diff --staged --quiet; then
+            echo "No manifest changes."
+          else
+            git commit -m "chore: publish ${{ steps.version.outputs.tag }} [skip ci]"
+            git push
+          fi
