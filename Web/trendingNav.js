@@ -108,7 +108,7 @@
       '#' + ROW_ID + ' .sectionTitleContainer{display:flex;align-items:center;}',
       '#' + ROW_ID + ' .trendingTitleLink{color:inherit;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;}',
       '#' + ROW_ID + ' .trendingTitleLink:hover{color:#00a4dc;}',
-      '#' + ROW_ID + ' .trendingTitleLink .chev{font-size:1.25em;line-height:1;opacity:.7;}',
+      '#' + ROW_ID + ' .trendingTitleLink .chev{font-size:1.25em;line-height:1;opacity:.7;margin-left:8px;}',
       '#' + ROW_ID + ' .trendingScrollBtns{margin-left:auto;display:flex;gap:8px;padding-right:3.3%;}',
       '#' + ROW_ID + ' .trendingScrollBtn{background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.2rem;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .15s,opacity .15s;}',
       '#' + ROW_ID + ' .trendingScrollBtn:hover{background:#00a4dc;}',
