@@ -113,9 +113,12 @@ public class WebInjectionService : IHostedService
             var json = JsonSerializer.Serialize(new
             {
                 id = PluginGuid,
-                // Unanchored: File Transformation matches this against the full request
-                // path (which has a directory prefix), like Jellyfin Enhanced's "index.html".
-                fileNamePattern = "index\\.html",
+                // Must be the EXACT same pattern string other index.html injectors use
+                // (e.g. Jellyfin Enhanced's "index.html"). File Transformation buckets
+                // callbacks by pattern string and, per request, runs only the first
+                // bucket whose regex matches — so a different string (even an equivalent
+                // regex) would be silently skipped when another injector is present.
+                fileNamePattern = "index.html",
                 callbackAssembly = typeof(WebInjectionService).Assembly.FullName,
                 callbackClass = typeof(WebInjectionService).FullName,
                 callbackMethod = nameof(TransformIndexHtml),
