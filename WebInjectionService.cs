@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller;
@@ -35,6 +36,13 @@ public class WebInjectionService : IHostedService
         _staticLogger = logger;
     }
 
+    /// <summary>Payload shape the File Transformation plugin deserializes into our callback.</summary>
+    public sealed class IndexHtmlPayload
+    {
+        /// <summary>Gets or sets the current contents of the file being served.</summary>
+        public string? Contents { get; set; }
+    }
+
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -44,7 +52,7 @@ public class WebInjectionService : IHostedService
             return Task.CompletedTask;
         }
 
-        _logger.LogInformation("Trending: File Transformation plugin not found; trying on-disk injection.");
+        _logger.LogInformation("Trending: File Transformation plugin unavailable; trying on-disk injection.");
         TryInjectOnDisk();
         return Task.CompletedTask;
     }
@@ -57,9 +65,9 @@ public class WebInjectionService : IHostedService
     /// Returns the HTML with our script tag injected. Must never return null/empty,
     /// or it would blank the web UI.
     /// </summary>
-    public static string TransformIndexHtml(object payload)
+    public static string TransformIndexHtml(IndexHtmlPayload payload)
     {
-        var contents = ExtractContents(payload);
+        var contents = payload?.Contents;
         try
         {
             if (string.IsNullOrEmpty(contents)) return contents ?? string.Empty;
@@ -86,18 +94,33 @@ public class WebInjectionService : IHostedService
 
             var pluginInterface = assembly?.GetType("Jellyfin.Plugin.FileTransformation.PluginInterface");
             var register = pluginInterface?.GetMethod("RegisterTransformation", BindingFlags.Public | BindingFlags.Static);
-            if (register == null) return false;
+            if (register == null)
+            {
+                _logger.LogInformation("Trending: File Transformation plugin not found.");
+                return false;
+            }
 
-            var payload = new
+            // RegisterTransformation takes a Newtonsoft JObject. Build it through the
+            // plugin's own JObject.Parse so the type identity matches across load contexts.
+            var jobjectType = register.GetParameters()[0].ParameterType;
+            var parse = jobjectType.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, new[] { typeof(string) });
+            if (parse == null)
+            {
+                _logger.LogWarning("Trending: could not find JObject.Parse on {Type}.", jobjectType.FullName);
+                return false;
+            }
+
+            var json = JsonSerializer.Serialize(new
             {
                 id = PluginGuid,
                 fileNamePattern = "^index\\.html$",
                 callbackAssembly = typeof(WebInjectionService).Assembly.FullName,
                 callbackClass = typeof(WebInjectionService).FullName,
                 callbackMethod = nameof(TransformIndexHtml),
-            };
+            });
 
-            register.Invoke(null, new object?[] { payload });
+            var payload = parse.Invoke(null, new object[] { json });
+            register.Invoke(null, new[] { payload });
             return true;
         }
         catch (Exception ex)
@@ -138,36 +161,5 @@ public class WebInjectionService : IHostedService
                 "Trending: could not inject nav link (web dir is read-only and the File Transformation plugin "
                 + "is not installed). Install it for sidebar integration. The page is still at /Trending/Page.");
         }
-    }
-
-    private static string? ExtractContents(object? payload)
-    {
-        if (payload == null) return null;
-        if (payload is string s) return s;
-
-        // POCO / anonymous object with a `contents` property.
-        var prop = payload.GetType().GetProperty("contents") ?? payload.GetType().GetProperty("Contents");
-        if (prop != null) return prop.GetValue(payload)?.ToString();
-
-        // JObject / dictionary-like with a string indexer (e.g. Newtonsoft).
-        foreach (var pi in payload.GetType().GetProperties())
-        {
-            var indexParams = pi.GetIndexParameters();
-            if (indexParams.Length == 1 &&
-                (indexParams[0].ParameterType == typeof(string) || indexParams[0].ParameterType == typeof(object)))
-            {
-                try
-                {
-                    var value = pi.GetValue(payload, new object[] { "contents" });
-                    if (value != null) return value.ToString();
-                }
-                catch
-                {
-                    // try next indexer
-                }
-            }
-        }
-
-        return null;
     }
 }
