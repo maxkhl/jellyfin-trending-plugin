@@ -105,6 +105,9 @@
     var s = document.createElement('style');
     s.id = STYLE_ID;
     s.textContent = [
+      '#' + ROW_ID + ' .trendingTitleLink{color:inherit;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:2px;}',
+      '#' + ROW_ID + ' .trendingTitleLink:hover{color:#00a4dc;}',
+      '#' + ROW_ID + ' .trendingTitleLink .chev{font-size:1.25em;line-height:1;opacity:.7;}',
       '#' + ROW_ID + ' .trendingScroller{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:6px 3.3% 14px;scroll-behavior:smooth;}',
       '#' + ROW_ID + ' .trendingScroller::-webkit-scrollbar{height:6px;}',
       '#' + ROW_ID + ' .trendingScroller::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:3px;}',
@@ -127,7 +130,13 @@
     titleC.className = 'sectionTitleContainer sectionTitleContainer-cards padded-left';
     var h2 = document.createElement('h2');
     h2.className = 'sectionTitle sectionTitle-cards';
-    h2.textContent = '🔥 Trending';
+    var titleLink = document.createElement('a');
+    titleLink.className = 'trendingTitleLink';
+    titleLink.href = PAGE;
+    titleLink.title = 'Open the Trending page';
+    titleLink.addEventListener('click', go);
+    titleLink.innerHTML = '<span>🔥 Trending</span><span class="chev" aria-hidden="true">›</span>';
+    h2.appendChild(titleLink);
     titleC.appendChild(h2);
     section.appendChild(titleC);
 
