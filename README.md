@@ -3,7 +3,7 @@
 Shows trending content across all users based on real server-side playback data.
 Tracks plays and exposes a user-facing trending page at `/Trending/Page`.
 
-- **Target Jellyfin ABI:** 10.11.0.0
+- **Target Jellyfin ABI:** 10.11.11.0
 - **Framework:** .NET 9
 
 ## Install via repository (recommended)
