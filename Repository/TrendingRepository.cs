@@ -68,7 +68,7 @@ public class TrendingRepository
     private List<TrendingItem> Compute(string? type, int days)
     {
         var cutoff = days > 0 ? DateTime.UtcNow.AddDays(-days) : DateTime.MinValue;
-        var users = _userManager.Users.ToList();
+        var users = _userManager.GetUsers().ToList();
         var results = new List<TrendingItem>();
 
         // --- Movies ---
