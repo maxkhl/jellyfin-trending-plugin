@@ -30,7 +30,7 @@
   var trendingCache = null;
   function fetchTrending() {
     if (trendingCache) return Promise.resolve(trendingCache);
-    return fetch('/Trending/Items?days=7&limit=20', { headers: authHeaders() })
+    return fetch('/Trending/Items?days=30&limit=20', { headers: authHeaders() })
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (items) { trendingCache = items || []; return trendingCache; })
       .catch(function () { return []; });
@@ -139,7 +139,7 @@
     titleLink.href = PAGE;
     titleLink.title = 'Open the Trending page';
     titleLink.addEventListener('click', go);
-    titleLink.innerHTML = '<span>🔥 Trending this week</span><span class="chev" aria-hidden="true"> ›</span>';
+    titleLink.innerHTML = '<span>🔥 Trending this month</span><span class="chev" aria-hidden="true"> ›</span>';
     h2.appendChild(titleLink);
     titleC.appendChild(h2);
 
