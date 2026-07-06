@@ -9,6 +9,15 @@ on:
       - 'README.md'
       - '.gitignore'
   workflow_dispatch:
+    inputs:
+      jellyfin_version:
+        description: 'Jellyfin SDK version to rebuild against (e.g. 10.11.12). Leave blank to keep the project default.'
+        required: false
+        default: ''
+      target_abi:
+        description: 'targetAbi for the manifest (defaults to <jellyfin_version>.0, or the project default if that is also blank).'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -34,6 +43,24 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Resolve build parameters
+        id: params
+        run: |
+          # jellyfin_version is only set on manual (workflow_dispatch) runs.
+          # When blank, the csproj default (JellyfinVersion) is used and the
+          # ABI falls back to the default TARGET_ABI env.
+          JF_VERSION="${{ github.event.inputs.jellyfin_version }}"
+          ABI="${{ github.event.inputs.target_abi }}"
+          if [ -n "$JF_VERSION" ] && [ -z "$ABI" ]; then
+            ABI="${JF_VERSION}.0"
+          fi
+          if [ -z "$ABI" ]; then
+            ABI="${{ env.TARGET_ABI }}"
+          fi
+          echo "jellyfin_version=$JF_VERSION" >> "$GITHUB_OUTPUT"
+          echo "target_abi=$ABI" >> "$GITHUB_OUTPUT"
+          echo "SDK version: ${JF_VERSION:-<project default>} | targetAbi: $ABI"
+
       - name: Compute version
         id: version
         run: |
@@ -45,14 +72,24 @@ jobs:
           echo "Building version $VERSION"
 
       - name: Restore
-        run: dotnet restore JellyfinTrending.csproj
+        run: |
+          SDK_ARG=""
+          if [ -n "${{ steps.params.outputs.jellyfin_version }}" ]; then
+            SDK_ARG="-p:JellyfinVersion=${{ steps.params.outputs.jellyfin_version }}"
+          fi
+          dotnet restore JellyfinTrending.csproj $SDK_ARG
 
       - name: Build
         run: |
+          SDK_ARG=""
+          if [ -n "${{ steps.params.outputs.jellyfin_version }}" ]; then
+            SDK_ARG="-p:JellyfinVersion=${{ steps.params.outputs.jellyfin_version }}"
+          fi
           dotnet publish JellyfinTrending.csproj \
             -c Release \
             -o publish \
             --no-self-contained \
+            $SDK_ARG \
             -p:Version=${{ steps.version.outputs.version }} \
             -p:AssemblyVersion=${{ steps.version.outputs.version }} \
             -p:FileVersion=${{ steps.version.outputs.version }}
@@ -78,7 +115,7 @@ jobs:
             "owner": "${{ github.repository_owner }}",
             "category": "General",
             "version": "${VERSION}",
-            "targetAbi": "${{ env.TARGET_ABI }}",
+            "targetAbi": "${{ steps.params.outputs.target_abi }}",
             "framework": "net9.0",
             "timestamp": "${{ steps.version.outputs.timestamp }}"
           }
@@ -115,7 +152,7 @@ jobs:
           NEW_VERSION=$(jq -n \
             --arg version "$VERSION" \
             --arg changelog "Automated build of commit ${{ github.sha }}." \
-            --arg abi "${{ env.TARGET_ABI }}" \
+            --arg abi "${{ steps.params.outputs.target_abi }}" \
             --arg src "$SOURCE_URL" \
             --arg sum "$CHECKSUM" \
             --arg ts "$TIMESTAMP" \
