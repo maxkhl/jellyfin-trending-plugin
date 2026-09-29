@@ -24,7 +24,9 @@
 
   function authHeaders() {
     var t = getToken();
-    return t ? { 'X-MediaBrowser-Token': t } : {};
+    // Jellyfin 12 disables the legacy X-MediaBrowser-Token header by default;
+    // the standard Authorization header works on all versions.
+    return t ? { 'Authorization': 'MediaBrowser Token="' + t + '"' } : {};
   }
 
   var trendingCache = null;
@@ -46,7 +48,7 @@
   function posterUrl(id) {
     var t = getToken();
     var u = '/Items/' + encodeURIComponent(id) + '/Images/Primary?maxWidth=280&quality=90';
-    return t ? u + '&api_key=' + encodeURIComponent(t) : u;
+    return t ? u + '&ApiKey=' + encodeURIComponent(t) : u;
   }
 
   // ---------- left drawer link ----------

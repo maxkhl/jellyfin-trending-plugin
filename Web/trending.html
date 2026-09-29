@@ -284,7 +284,9 @@
 
   function authHeaders() {
     const token = getToken();
-    return token ? { 'X-MediaBrowser-Token': token } : {};
+    // Jellyfin 12 disables the legacy X-MediaBrowser-Token header by default;
+    // the standard Authorization header works on all versions.
+    return token ? { 'Authorization': `MediaBrowser Token="${token}"` } : {};
   }
 
   async function fetchTrending() {
@@ -299,7 +301,7 @@
   function posterUrl(itemId) {
     const token = getToken();
     const base = `/Items/${itemId}/Images/Primary?maxWidth=320&quality=90`;
-    return token ? `${base}&api_key=${token}` : base;
+    return token ? `${base}&ApiKey=${encodeURIComponent(token)}` : base;
   }
 
   function renderCard(item, rank) {
