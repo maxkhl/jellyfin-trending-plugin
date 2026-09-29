@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       jellyfin_version:
-        description: 'Jellyfin SDK version to rebuild against (e.g. 10.11.12). Leave blank to keep the project default.'
+        description: 'Jellyfin SDK version to rebuild against (e.g. 12.1.1). Leave blank to keep the project default.'
         required: false
         default: ''
       target_abi:
@@ -25,8 +25,8 @@ permissions:
 env:
   PLUGIN_NAME: Trending
   ARTIFACT_NAME: jellyfin-trending
-  DOTNET_VERSION: '9.0.x'
-  TARGET_ABI: '10.11.11.0'
+  DOTNET_VERSION: '10.0.x'
+  TARGET_ABI: '12.1.0.0'
   PLUGIN_GUID: '3a7b9c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d'
 
 jobs:
@@ -116,7 +116,7 @@ jobs:
             "category": "General",
             "version": "${VERSION}",
             "targetAbi": "${{ steps.params.outputs.target_abi }}",
-            "framework": "net9.0",
+            "framework": "net10.0",
             "timestamp": "${{ steps.version.outputs.timestamp }}"
           }
           EOF

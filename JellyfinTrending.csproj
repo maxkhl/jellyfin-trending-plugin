@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>JellyfinTrending</AssemblyName>
     <RootNamespace>JellyfinTrending</RootNamespace>
     <Nullable>enable</Nullable>
@@ -10,8 +10,8 @@
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <!-- Jellyfin SDK version to compile against. Override from CI with
-         -p:JellyfinVersion=10.11.12 to rebuild for a new Jellyfin release. -->
-    <JellyfinVersion Condition="'$(JellyfinVersion)' == ''">10.11.11</JellyfinVersion>
+         -p:JellyfinVersion=12.1.1 to rebuild for a new Jellyfin release. -->
+    <JellyfinVersion Condition="'$(JellyfinVersion)' == ''">12.1.0</JellyfinVersion>
   </PropertyGroup>
 
   <ItemGroup>

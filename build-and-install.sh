@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build and install JellyfinTrending plugin
-# Run this on any machine with .NET 8 SDK and internet access
+# Run this on any machine with .NET 10 SDK and internet access
 # Then copy the output to maxmedia
 
 set -e

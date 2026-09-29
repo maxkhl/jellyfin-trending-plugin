@@ -3,8 +3,8 @@
 Shows trending content across all users based on real server-side playback data.
 Tracks plays and exposes a user-facing trending page at `/Trending/Page`.
 
-- **Target Jellyfin ABI:** 10.11.11.0
-- **Framework:** .NET 9
+- **Target Jellyfin ABI:** 12.1.0.0
+- **Framework:** .NET 10
 
 ## Install via repository (recommended)
 
@@ -40,7 +40,7 @@ with a `MissingMethodException` because it was compiled against the older Jellyf
 API. To rebuild against the new API **without touching code or your local machine**:
 
 1. Go to the repo's **Actions** tab → **Build & Publish Plugin** → **Run workflow**.
-2. Fill in **`jellyfin_version`** with the new version (e.g. `10.11.12`).
+2. Fill in **`jellyfin_version`** with the new version (e.g. `12.1.1`).
    Leave **`target_abi`** blank to auto-set it to `<jellyfin_version>.0`.
 3. Run it. The workflow overrides the `Jellyfin.Controller` / `Jellyfin.Model`
    NuGet versions (via `-p:JellyfinVersion=…`, wired through

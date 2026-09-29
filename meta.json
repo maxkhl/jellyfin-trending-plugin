@@ -10,7 +10,7 @@
       {
         "version": "1.0.0.0",
         "changelog": "Initial release.",
-        "targetAbi": "10.11.0.0",
+        "targetAbi": "12.1.0.0",
         "sourceUrl": "",
         "checksum": "",
         "timestamp": "2026-04-04T00:00:00Z"
